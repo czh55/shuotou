@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>说透 · 用自己的话讲透</title>
+  <meta name="description" content="把生活原材料练成有结构的看法。笔记是别人的理解，说透才是你的。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600&family=Sora:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="index.html">说透</a>
+      <nav>
+        <a href="method.html">六段写法</a>
+        <a href="#wall">练习墙</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <p class="kicker">Shuotou · Own Words</p>
+      <h1>说透</h1>
+      <p class="lede">笔记整理得再好，也不代表你有了自己的看法。<strong>笔记是别人理解之后的结果，不是你的。</strong>这里逼自己：对阅读、剧集、动漫、综艺、见闻——用自己的语言讲透，落到有结构的文字里。</p>
+    </section>
+
+    <div class="strips" aria-label="为什么做">
+      <div class="strip">
+        <div class="label">触发</div>
+        <p>接受采访时，行外人记者一问，脑子里想到什么说什么，磕巴、想不起词——说不出有来龙去脉的答案。</p>
+      </div>
+      <div class="strip">
+        <div class="label">误区</div>
+        <p>以为「整理笔记」等于「有看法」。其实那只是<em>别人已经讲透过的副本</em>。</p>
+      </div>
+      <div class="strip">
+        <div class="label">练法</div>
+        <p>日常凡事都练一遍：用自己的话描述，写成六段结构。练的是开口前的骨架，不是存档量。</p>
+      </div>
+    </div>
+
+    <section class="section" id="wall">
+      <h2>练习墙</h2>
+      <p>每篇都是一次「对着空气采访自己」。按日期倒序。</p>
+      <div class="toolbar">
+        <input id="searchInput" class="search" type="search" placeholder="搜标题 / 一句话 / 原材料…" autocomplete="off" />
+        <div id="tagFilters" class="tag-filters" aria-label="类型筛选"></div>
+      </div>
+      <div id="timeline" class="timeline" aria-live="polite"></div>
+    </section>
+
+    <footer class="site">
+      <span>强迫结构 · 反对支支吾吾</span>
+      <span>
+        <a href="method.html">六段写法</a>
+        ·
+        <a href="https://chenzhiheng.cn/express_system/">表达系统</a>
+        ·
+        <a href="https://chenzhiheng.cn/daily-hub/">Daily Hub</a>
+      </span>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var all = [];
+      var activeTag = null;
+      var $ = function (id) { return document.getElementById(id); };
+
+      function esc(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function collectTags(items) {
+        var map = {};
+        items.forEach(function (item) {
+          (item.tags || []).forEach(function (t) {
+            map[t] = (map[t] || 0) + 1;
+          });
+        });
+        return Object.keys(map).sort(function (a, b) {
+          return map[b] - map[a] || a.localeCompare(b, 'zh');
+        });
+      }
+
+      function renderTags() {
+        var root = $('tagFilters');
+        root.innerHTML = '';
+        var tags = collectTags(all);
+        function addChip(label, tag) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'tag-chip' + ((tag === null && !activeTag) || activeTag === tag ? ' active' : '');
+          btn.textContent = label;
+          btn.addEventListener('click', function () {
+            activeTag = tag;
+            render();
+          });
+          root.appendChild(btn);
+        }
+        addChip('全部', null);
+        tags.forEach(function (t) { addChip(t, t); });
+      }
+
+      function filtered() {
+        var q = ($('searchInput').value || '').trim().toLowerCase();
+        return all.filter(function (item) {
+          if (activeTag && !(item.tags || []).includes(activeTag)) return false;
+          if (!q) return true;
+          var blob = [item.title, item.one_liner, item.source, (item.tags || []).join(' ')].join(' ').toLowerCase();
+          return blob.indexOf(q) !== -1;
+        });
+      }
+
+      function render() {
+        renderTags();
+        var items = filtered();
+        var root = $('timeline');
+        if (!items.length) {
+          root.innerHTML = '<p class="empty">还没有匹配的练习。打开六段写法，写第一篇。</p>';
+          return;
+        }
+        root.innerHTML = items.map(function (item) {
+          var tags = (item.tags || []).map(function (t) {
+            return '<span class="tag">' + esc(t) + '</span>';
+          }).join('');
+          return (
+            '<a class="entry" href="' + esc(item.html) + '">' +
+              '<div class="entry-date">' + esc(item.date || '—') + '</div>' +
+              '<div>' +
+                '<h3 class="entry-title">' + esc(item.title) + '</h3>' +
+                '<p class="entry-one">' + esc(item.one_liner || '') + '</p>' +
+                '<div class="entry-meta">' + tags +
+                  (item.source ? '<span>' + esc(item.source) + '</span>' : '') +
+                '</div>' +
+              '</div>' +
+            '</a>'
+          );
+        }).join('');
+      }
+
+      fetch('index.json')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          all = Array.isArray(data) ? data.slice() : [];
+          all.sort(function (a, b) {
+            return String(b.date || '').localeCompare(String(a.date || ''));
+          });
+          render();
+        })
+        .catch(function () {
+          $('timeline').innerHTML = '<p class="empty">读不到 index.json。</p>';
+        });
+
+      $('searchInput').addEventListener('input', render);
+    })();
+  </script>
+</body>
+</html>
